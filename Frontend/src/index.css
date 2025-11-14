@@ -1,0 +1,48 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@300..700&family=Poppins:wght@500&family=Saira:ital,wght@0,100..900;1,100..900&display=swap');
+
+@import "tailwindcss";
+
+
+
+*{
+   font-family: "Fredoka", sans-serif;
+  font-optical-sizing: auto;
+   box-sizing: border-box;
+}
+
+
+
+body,html {
+   width: 100%;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  font-family: 'Saira', 'Poppins', sans-serif;
+}
+
+.slick-slider {
+  overflow: hidden;
+   margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+
+}
+
+.slick-list {
+  overflow: hidden !important;
+   margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.slick-slide {
+  padding: 0 10px;
+}
+.slick-track {
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.slick-center img {
+  transform: scale(1.3);
+  transition: transform 0.3s;
+}
+
+
