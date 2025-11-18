@@ -8,27 +8,25 @@ import Login  from './components/Login'
 import Dashboard from './components/Dashboard'
 import ProtectedRoute from './components/ProtectedRoute'
 import ForgotPasswordPopup from './components/ForgetPasswordPopup'
+import History from './components/History'
 const App = () => {
 
   return (
    <>
-  <Navbar/>
- <Routes>
-        <Route path='/' element={<Hero/>} />
-        <Route path='/prayer' element={<Prayer/>}/>
-        <Route path='/signup' element={<Signup/>}/>
-       <Route path='/login' element={<Login/>}/>
- <Route path="/forget-password" element={<ForgotPasswordPopup />} />     
-  
-     <Route path='/dashboard' element={ 
-       <ProtectedRoute>
-      <Dashboard />
-    </ProtectedRoute>}/>
-
-
-
-        </Routes>     
- 
+    <Navbar/>
+    <Routes>
+      <Route path='/' element={<Hero/>} />
+      <Route path='/prayer' element={<Prayer/>}/>
+      <Route path='/signup' element={<Signup/>}/>
+      <Route path='/login' element={<Login/>}/>
+      <Route path="/forget-password" element={<ForgotPasswordPopup />} />     
+      <Route path='/dashboard' element={ 
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      }/>
+      <Route path='/history' element={<History />}/>
+    </Routes>     
    </>
   )
 }
